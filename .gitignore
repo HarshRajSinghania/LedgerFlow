@@ -1,0 +1,114 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================
+# Virtual Environments
+# ==========================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================
+# Flask
+# ==========================
+instance/
+.webassets-cache/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Flask session files
+.flaskenv
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================
+# Logs
+# ==========================
+*.log
+logs/
+
+# ==========================
+# Testing
+# ==========================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.cache/
+
+# Type checkers
+.mypy_cache/
+.pyre/
+.pytype/
+
+# ==========================
+# Jupyter
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# IDEs
+# ==========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# ==========================
+# OS Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Build
+# ==========================
+pip-wheel-metadata/
+
+# ==========================
+# Secrets
+# ==========================
+*.pem
+*.key
+*.crt
+
+# ==========================
+# Misc
+# ==========================
+*.bak
+*.tmp
+*.temp
