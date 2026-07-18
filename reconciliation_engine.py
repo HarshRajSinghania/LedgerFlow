@@ -40,6 +40,7 @@ REQUIRED_COLUMNS = [
 COLUMN_ALIASES = {
     "invoiceid": "Invoice_ID", "invoice_id": "Invoice_ID", "poref": "Invoice_ID",
     "po": "Invoice_ID", "ponumber": "Invoice_ID", "po_number": "Invoice_ID",
+    "poid": "Invoice_ID", "po_id": "Invoice_ID",
     "supplier": "Supplier", "vendor": "Supplier",
     "date": "Date", "invoicedate": "Date", "podate": "Date",
     "productcode": "Product_Code", "product_code": "Product_Code", "sku": "Product_Code",
