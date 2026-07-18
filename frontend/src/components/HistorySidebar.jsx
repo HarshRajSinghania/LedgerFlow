@@ -26,10 +26,10 @@ export default function HistorySidebar({ historyList, onSelectJob, onDeleteJob, 
   };
 
   return (
-    <div className="glass-panel border border-slate-800 rounded-2xl p-5 h-full flex flex-col">
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
-        <History className="w-4 h-4 text-violet-400" />
-        <h3 className="text-sm font-semibold text-slate-200">Reconciliation History</h3>
+    <div className="ledger-panel border border-[#dcd6cd] rounded-lg p-5 bg-[#ffffff] h-full flex flex-col">
+      <div className="flex items-center gap-2 border-b border-[#dcd6cd] pb-3.5 mb-4">
+        <History className="w-4 h-4 text-[#be5a38]" />
+        <h3 className="text-xs font-bold uppercase tracking-wider font-serif text-[#2c2520]">Reconciliation Log</h3>
       </div>
 
       {historyList && historyList.length > 0 ? (
@@ -43,10 +43,10 @@ export default function HistorySidebar({ historyList, onSelectJob, onDeleteJob, 
               <div
                 key={job.job_id}
                 onClick={() => onSelectJob(job)}
-                className={`group relative p-3 border.5 rounded-xl cursor-pointer transition-all flex flex-col justify-between ${
+                className={`group relative p-3 border.5 rounded cursor-pointer transition-all flex flex-col justify-between ${
                   isActive
-                    ? 'bg-violet-600/10 border-violet-500/35 text-slate-200 shadow-sm'
-                    : 'bg-slate-950/40 border-slate-900 hover:border-slate-800/80 hover:bg-slate-900/20 text-slate-300'
+                    ? 'bg-[#f7f4eb] border-[#be5a38]/40 text-[#2c2520]'
+                    : 'bg-[#ffffff] border-[#dcd6cd] hover:border-[#be5a38]/30 hover:bg-[#fcfbf9] text-[#73675c]'
                 }`}
               >
                 {/* Delete Button */}
@@ -55,37 +55,37 @@ export default function HistorySidebar({ historyList, onSelectJob, onDeleteJob, 
                     e.stopPropagation();
                     onDeleteJob(job.job_id);
                   }}
-                  className="absolute top-2 right-2 p-1 text-slate-600 hover:text-red-400 rounded-lg hover:bg-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove from history"
+                  className="absolute top-2.5 right-2.5 p-1 text-[#73675c] hover:text-[#be5a38] rounded hover:bg-[#f7f4eb] opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Remove record"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
 
                 {/* File names and Date */}
                 <div className="pr-6">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-[#2c2520]">
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#4f748a] flex-shrink-0" />
                     <span className="truncate max-w-[130px]">{job.po_name}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-[#73675c] mt-0.5">
                     <Calendar className="w-3 h-3 flex-shrink-0" />
                     <span>{formatDate(job.timestamp)}</span>
                   </div>
                 </div>
 
                 {/* Metrics footer */}
-                <div className="flex items-center justify-between border-t border-slate-900/60 pt-2 mt-2 text-[10px]">
-                  <span className="flex items-center gap-0.5 text-slate-400">
-                    Accuracy: <strong className="text-emerald-400">{matchRate}%</strong>
+                <div className="flex items-center justify-between border-t border-[#f7f4eb] pt-2 mt-2 text-[9px] font-mono">
+                  <span className="text-[#73675c]">
+                    Accuracy: <strong className="text-[#3c5946]">{matchRate}%</strong>
                   </span>
                   
-                  <span className="flex items-center gap-0.5 text-slate-400">
-                    Exposure: <strong className={exposure > 0 ? 'text-red-400' : 'text-slate-400'}>{formatCurrency(exposure)}</strong>
+                  <span className="text-[#73675c]">
+                    Exposure: <strong className={exposure > 0 ? 'text-[#be5a38]' : 'text-[#73675c]'}>{formatCurrency(exposure)}</strong>
                   </span>
                 </div>
 
                 {/* Chevron icon indicator */}
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-600 group-hover:text-slate-400 pointer-events-none transition-transform group-hover:translate-x-0.5">
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#73675c] group-hover:text-[#2c2520] pointer-events-none transition-transform group-hover:translate-x-0.5">
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
@@ -93,10 +93,10 @@ export default function HistorySidebar({ historyList, onSelectJob, onDeleteJob, 
           })}
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-900 rounded-xl">
-          <History className="w-8 h-8 text-slate-800 mb-2" />
-          <p className="text-xs font-semibold text-slate-400">No previous runs</p>
-          <p className="text-[10px] text-slate-600 mt-1 max-w-[150px]">Upload POs and Invoices to populate your local reconciliation log.</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-[#73675c] border border-dashed border-[#dcd6cd] rounded">
+          <History className="w-6 h-6 text-[#b8ad9e] mb-2" />
+          <p className="text-xs font-serif font-bold text-[#2c2520]">No ledger history</p>
+          <p className="text-[9px] font-mono text-[#73675c] mt-1 max-w-[150px]">Reconciliation reports will be archived here locally.</p>
         </div>
       )}
     </div>

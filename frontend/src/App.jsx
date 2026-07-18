@@ -3,6 +3,7 @@ import { Layers, Activity, Server, AlertCircle } from 'lucide-react';
 import UploadZone from './components/UploadZone';
 import StatsGrid from './components/StatsGrid';
 import ExecutiveSummary from './components/ExecutiveSummary';
+import ReconciliationChart from './components/ReconciliationChart';
 import ReconciliationTable from './components/ReconciliationTable';
 import HistorySidebar from './components/HistorySidebar';
 
@@ -44,9 +45,6 @@ export default function App() {
   }, []);
 
   const handleReconciliationComplete = (result) => {
-    // Collect mock or actual file names from input elements if needed,
-    // otherwise we can read them from upload state, or just extract them.
-    // In this case, let's look at the result job_id.
     const newJob = {
       job_id: result.job_id,
       timestamp: new Date().toISOString(),
@@ -59,12 +57,9 @@ export default function App() {
       download_url: result.download_url
     };
 
-    // Update history, keeping the last 5 jobs to avoid localStorage quota issues
     const updatedHistory = [newJob, ...historyList.filter(j => j.job_id !== result.job_id)].slice(0, 5);
     setHistoryList(updatedHistory);
     localStorage.setItem('ledgerflow_jobs_v1', JSON.stringify(updatedHistory));
-    
-    // Set as active job
     setActiveJob(newJob);
   };
 
@@ -87,32 +82,32 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800/60 bg-slate-950/45 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+      {/* Top Navbar (Minimal Vintage Style) */}
+      <header className="border-b border-[#dcd6cd] bg-[#ffffff] sticky top-0 z-50 px-6 py-4 shadow-[0_1px_3px_rgba(44,37,32,0.03)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveJob(null)}>
-            <div className="w-9 h-9 bg-gradient-to-tr from-violet-600 to-indigo-500 rounded-xl flex items-center justify-center text-white shadow-[0_0_15px_-3px_rgba(124,58,237,0.4)]">
-              <Layers className="w-5 h-5" />
+            <div className="w-8.5 h-8.5 bg-[#be5a38] rounded flex items-center justify-center text-white shadow-sm">
+              <Layers className="w-4.5 h-4.5" />
             </div>
             <div>
-              <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+              <span className="font-serif font-bold text-lg tracking-tight text-[#2c2520] block leading-none">
                 LedgerFlow
               </span>
-              <span className="text-[10px] text-slate-500 font-semibold block uppercase tracking-wider leading-none">reconciliation engine</span>
+              <span className="text-[9px] font-mono text-[#73675c] font-bold block uppercase tracking-wider mt-1 leading-none">RECONCILIATION ENGINE</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* API Health badge */}
-            <div className="flex items-center gap-2 px-3 py-1 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-semibold text-slate-400">
-              <Server className="w-3.5 h-3.5 text-slate-500" />
-              <span>Backend Core:</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-[#f8f6f0] border border-[#dcd6cd] rounded text-[9px] font-mono font-bold text-[#73675c] uppercase">
+              <Server className="w-3.5 h-3.5 text-[#73675c]" />
+              <span>Core Core:</span>
               {apiOnline === null ? (
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse inline-block" /> Checking</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse inline-block" /> Checking</span>
               ) : apiOnline ? (
-                <span className="flex items-center gap-1 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Online</span>
+                <span className="flex items-center gap-1 text-[#3c5946]"><span className="w-1.5 h-1.5 rounded-full bg-[#3c5946] inline-block" /> Online</span>
               ) : (
-                <span className="flex items-center gap-1 text-red-400"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Offline</span>
+                <span className="flex items-center gap-1 text-[#be5a38]"><span className="w-1.5 h-1.5 rounded-full bg-[#be5a38] inline-block" /> Offline</span>
               )}
             </div>
           </div>
@@ -143,14 +138,14 @@ export default function App() {
           /* Dashboard Screen */
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
             {/* Dashboard Content */}
-            <div className="lg:col-span-3 space-y-8">
-              <div className="flex items-center justify-between border-b border-slate-800/40 pb-4">
+            <div className="lg:col-span-3 space-y-6">
+              <div className="flex items-center justify-between border-b border-[#dcd6cd] pb-4">
                 <div>
-                  <h1 className="text-2xl font-extrabold tracking-tight text-slate-100">
+                  <h1 className="text-2xl font-bold font-serif text-[#2c2520]">
                     Reconciliation Dashboard
                   </h1>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Analyzing ledger discrepancies for <strong className="text-indigo-400">{activeJob.po_name}</strong> vs <strong className="text-violet-400">{activeJob.invoice_name}</strong>
+                  <p className="text-[11px] font-mono text-[#73675c] uppercase mt-0.5">
+                    Analyzing ledger discrepancies for <strong className="text-[#be5a38]">{activeJob.po_name}</strong> vs <strong className="text-[#4f748a]">{activeJob.invoice_name}</strong>
                   </p>
                 </div>
               </div>
@@ -162,6 +157,12 @@ export default function App() {
               <ExecutiveSummary
                 summary={activeJob.summary}
                 warnings={activeJob.warnings}
+              />
+
+              {/* Recharts Visualizations (New Graph component) */}
+              <ReconciliationChart
+                report={activeJob.report}
+                stats={activeJob.stats}
               />
 
               {/* Report Table Sheet */}
@@ -186,13 +187,13 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/40 bg-slate-950/20 py-5 text-center text-[10px] text-slate-600">
+      <footer className="border-t border-[#dcd6cd] bg-[#ffffff] py-5 text-center text-[9px] font-mono text-[#73675c] shadow-[0_-1px_3px_rgba(44,37,32,0.02)]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>© 2026 LedgerFlow. Built for the Hackathon. All rights reserved.</span>
+          <span>© 2026 LEDGERFLOW. AUDIT CORE MV-1. ALL RIGHTS RESERVED.</span>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-slate-400 transition-colors">API Docs</a>
+            <a href="#" className="hover:text-[#2c2520] transition-colors">PRIVACY POLICY</a>
+            <a href="#" className="hover:text-[#2c2520] transition-colors">TERMS</a>
+            <a href="#" className="hover:text-[#2c2520] transition-colors">API</a>
           </div>
         </div>
       </footer>

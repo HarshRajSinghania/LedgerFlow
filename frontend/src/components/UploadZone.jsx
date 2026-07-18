@@ -114,20 +114,20 @@ export default function UploadZone({ onReconciliationComplete }) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center p-2.5 bg-violet-600/10 rounded-2xl border border-violet-500/20 mb-4">
-          <UploadCloud className="w-8 h-8 text-violet-400" />
+        <div className="inline-flex items-center justify-center p-3 bg-[#be5a38]/5 border border-[#be5a38]/20 rounded-full mb-4">
+          <UploadCloud className="w-7 h-7 text-[#be5a38]" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-violet-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">
-          LedgerFlow Reconciliation
+        <h1 className="text-4xl md:text-5xl font-bold font-serif text-[#2c2520]">
+          LedgerFlow Ingestion
         </h1>
-        <p className="text-slate-400 mt-2 max-w-xl mx-auto text-base">
-          Upload your Purchase Orders and Invoices to automatically align line items, flag pricing discrepancies, and surface financial exposures with AI-narrated summaries.
+        <p className="text-[#73675c] mt-2 max-w-xl mx-auto text-sm font-sans leading-relaxed">
+          Align purchase ledgers, flag pricing discrepancies, and extract financial exposure reports. Upload Purchase Orders and Invoices in Excel spreadsheet formats.
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 flex items-center gap-3 p-4 bg-red-950/40 border border-red-500/30 rounded-xl text-red-200 text-sm animate-fade-in">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 p-4 bg-[#fcf8f2] border border-[#be5a38]/30 rounded text-[#be5a38] text-sm animate-fade-in font-mono">
+          <AlertCircle className="w-4 h-4 text-[#be5a38] flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -136,17 +136,18 @@ export default function UploadZone({ onReconciliationComplete }) {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Purchase Orders Upload Box */}
           <div
-            className={`relative flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all duration-300 glass-panel ${
+            className={`relative flex flex-col items-center justify-center p-8 rounded-lg border-2 border-dashed transition-all duration-300 ledger-panel cursor-pointer ${
               dragPoActive
-                ? 'border-violet-500 bg-violet-950/20 scale-[1.01]'
+                ? 'border-[#be5a38] bg-[#f8f6f0] scale-[1.01]'
                 : poFile
-                ? 'border-emerald-500/40 bg-emerald-950/5'
-                : 'border-slate-800 hover:border-slate-700 bg-slate-900/40'
+                ? 'border-[#3c5946]/45 bg-[#fcfdfc]'
+                : 'border-[#dcd6cd] hover:border-[#be5a38]/55 bg-[#ffffff]'
             }`}
             onDragEnter={(e) => handleDrag(e, setDragPoActive)}
             onDragOver={(e) => handleDrag(e, setDragPoActive)}
             onDragLeave={(e) => handleDrag(e, setDragPoActive)}
             onDrop={(e) => handleDrop(e, setPoFile, setDragPoActive)}
+            onClick={() => !poFile && poInputRef.current?.click()}
           >
             <input
               ref={poInputRef}
@@ -157,52 +158,53 @@ export default function UploadZone({ onReconciliationComplete }) {
             />
 
             {poFile ? (
-              <div className="flex flex-col items-center text-center space-y-4 w-full">
-                <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]">
-                  <FileSpreadsheet className="w-8 h-8" />
+              <div className="flex flex-col items-center text-center space-y-4 w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="w-12 h-12 bg-[#3c5946]/5 border border-[#3c5946]/15 rounded flex items-center justify-center text-[#3c5946]">
+                  <FileSpreadsheet className="w-6 h-6" />
                 </div>
                 <div className="w-full px-2">
-                  <p className="text-slate-200 font-medium truncate max-w-xs mx-auto">{poFile.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">{formatFileSize(poFile.size)}</p>
+                  <p className="text-[#2c2520] font-bold text-sm truncate max-w-xs mx-auto font-serif">{poFile.name}</p>
+                  <p className="text-[10px] text-[#73675c] font-mono mt-1">{formatFileSize(poFile.size)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                    <Check className="w-3.5 h-3.5" /> Ready
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-[#e6ede7] text-[#3c5946] border border-[#3c5946]/20 px-2 py-0.5 rounded">
+                    <Check className="w-3 h-3" /> READY
                   </span>
                   <button
                     type="button"
                     onClick={() => { setPoFile(null); if(poInputRef.current) poInputRef.current.value = ''; }}
-                    className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-1 text-[#73675c] hover:text-[#be5a38] rounded border border-transparent hover:border-[#dcd6cd] transition-all"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-center cursor-pointer w-full" onClick={() => poInputRef.current?.click()}>
-                <div className="w-14 h-14 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center text-slate-400 mb-4 hover:scale-105 transition-transform">
-                  <FileSpreadsheet className="w-8 h-8" />
+              <div className="flex flex-col items-center text-center w-full">
+                <div className="w-12 h-12 bg-[#f7f4eb] border border-[#dcd6cd] rounded flex items-center justify-center text-[#73675c] mb-4 hover:scale-105 transition-transform">
+                  <FileSpreadsheet className="w-6 h-6" />
                 </div>
-                <p className="text-slate-200 font-semibold text-sm">Upload Purchase Orders</p>
-                <p className="text-slate-500 text-xs mt-1">Drag and drop or click to browse</p>
-                <span className="text-[10px] text-slate-600 bg-slate-950 px-2 py-0.5 mt-4 rounded-md border border-slate-800">Excel format (.xlsx)</span>
+                <p className="text-[#2c2520] font-bold text-sm font-serif">Purchase Order Sheet</p>
+                <p className="text-[#73675c] text-xs mt-1">Drag and drop file here, or click to browse</p>
+                <span className="text-[9px] font-mono text-[#73675c] bg-[#f7f4eb] px-2 py-0.5 mt-4 border border-[#dcd6cd]">EXCEL FORMAT (.XLSX)</span>
               </div>
             )}
           </div>
 
           {/* Invoices Upload Box */}
           <div
-            className={`relative flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all duration-300 glass-panel ${
+            className={`relative flex flex-col items-center justify-center p-8 rounded-lg border-2 border-dashed transition-all duration-300 ledger-panel cursor-pointer ${
               dragInvActive
-                ? 'border-violet-500 bg-violet-950/20 scale-[1.01]'
+                ? 'border-[#be5a38] bg-[#f8f6f0] scale-[1.01]'
                 : invoiceFile
-                ? 'border-emerald-500/40 bg-emerald-950/5'
-                : 'border-slate-800 hover:border-slate-700 bg-slate-900/40'
+                ? 'border-[#3c5946]/45 bg-[#fcfdfc]'
+                : 'border-[#dcd6cd] hover:border-[#be5a38]/55 bg-[#ffffff]'
             }`}
             onDragEnter={(e) => handleDrag(e, setDragInvActive)}
             onDragOver={(e) => handleDrag(e, setDragInvActive)}
             onDragLeave={(e) => handleDrag(e, setDragInvActive)}
             onDrop={(e) => handleDrop(e, setInvoiceFile, setDragInvActive)}
+            onClick={() => !invoiceFile && invInputRef.current?.click()}
           >
             <input
               ref={invInputRef}
@@ -213,35 +215,35 @@ export default function UploadZone({ onReconciliationComplete }) {
             />
 
             {invoiceFile ? (
-              <div className="flex flex-col items-center text-center space-y-4 w-full">
-                <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]">
-                  <FileSpreadsheet className="w-8 h-8" />
+              <div className="flex flex-col items-center text-center space-y-4 w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="w-12 h-12 bg-[#3c5946]/5 border border-[#3c5946]/15 rounded flex items-center justify-center text-[#3c5946]">
+                  <FileSpreadsheet className="w-6 h-6" />
                 </div>
                 <div className="w-full px-2">
-                  <p className="text-slate-200 font-medium truncate max-w-xs mx-auto">{invoiceFile.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">{formatFileSize(invoiceFile.size)}</p>
+                  <p className="text-[#2c2520] font-bold text-sm truncate max-w-xs mx-auto font-serif">{invoiceFile.name}</p>
+                  <p className="text-[10px] text-[#73675c] font-mono mt-1">{formatFileSize(invoiceFile.size)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                    <Check className="w-3.5 h-3.5" /> Ready
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-[#e6ede7] text-[#3c5946] border border-[#3c5946]/20 px-2 py-0.5 rounded">
+                    <Check className="w-3 h-3" /> READY
                   </span>
                   <button
                     type="button"
                     onClick={() => { setInvoiceFile(null); if(invInputRef.current) invInputRef.current.value = ''; }}
-                    className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-1 text-[#73675c] hover:text-[#be5a38] rounded border border-transparent hover:border-[#dcd6cd] transition-all"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-center cursor-pointer w-full" onClick={() => invInputRef.current?.click()}>
-                <div className="w-14 h-14 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center text-slate-400 mb-4 hover:scale-105 transition-transform">
-                  <FileSpreadsheet className="w-8 h-8" />
+              <div className="flex flex-col items-center text-center w-full">
+                <div className="w-12 h-12 bg-[#f7f4eb] border border-[#dcd6cd] rounded flex items-center justify-center text-[#73675c] mb-4 hover:scale-105 transition-transform">
+                  <FileSpreadsheet className="w-6 h-6" />
                 </div>
-                <p className="text-slate-200 font-semibold text-sm">Upload Invoices</p>
-                <p className="text-slate-500 text-xs mt-1">Drag and drop or click to browse</p>
-                <span className="text-[10px] text-slate-600 bg-slate-950 px-2 py-0.5 mt-4 rounded-md border border-slate-800">Excel format (.xlsx)</span>
+                <p className="text-[#2c2520] font-bold text-sm font-serif">Invoice Ledger Sheet</p>
+                <p className="text-[#73675c] text-xs mt-1">Drag and drop file here, or click to browse</p>
+                <span className="text-[9px] font-mono text-[#73675c] bg-[#f7f4eb] px-2 py-0.5 mt-4 border border-[#dcd6cd]">EXCEL FORMAT (.XLSX)</span>
               </div>
             )}
           </div>
@@ -251,17 +253,17 @@ export default function UploadZone({ onReconciliationComplete }) {
           <button
             type="submit"
             disabled={!poFile || !invoiceFile || loading}
-            className={`relative flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-semibold shadow-lg text-white transition-all duration-300 ${
+            className={`relative flex items-center justify-center gap-2 px-8 py-3 rounded font-mono font-bold uppercase tracking-wider text-xs border shadow transition-all duration-200 ${
               !poFile || !invoiceFile
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50 border border-slate-700/50'
+                ? 'bg-[#eae3d2] text-[#b8ad9e] border-[#dcd6cd] cursor-not-allowed'
                 : loading
-                ? 'bg-violet-950 text-violet-300 border border-violet-800/40 cursor-wait'
-                : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 hover:scale-[1.02] active:scale-[0.98] border border-violet-500/20 shadow-violet-950/20 shadow-[0_4px_20px_0_rgba(124,58,237,0.25)]'
+                ? 'bg-[#ffffff] text-[#be5a38] border-[#be5a38] cursor-wait'
+                : 'bg-[#be5a38] hover:bg-[#a64c2e] text-[#ffffff] border-[#be5a38] shadow-[2px_2px_0px_rgba(44,37,32,0.15)] hover:translate-y-[-1px] active:translate-y-[1px]'
             }`}
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-violet-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-[#be5a38]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -269,7 +271,7 @@ export default function UploadZone({ onReconciliationComplete }) {
               </>
             ) : (
               <>
-                <span>Run Ledger Reconciliation</span>
+                <span>Run Ingestion & Reconciliation</span>
               </>
             )}
           </button>
