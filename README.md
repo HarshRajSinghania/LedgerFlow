@@ -9,10 +9,19 @@ exception notes.
 
 ## Run it
 
+### Backend API
 ```bash
 pip install -r requirements.txt
 python app.py            # dev server on http://localhost:5000
 ```
+
+### Frontend Web App
+```bash
+cd frontend
+npm install
+npm run dev              # dev server on http://localhost:5173
+```
+
 
 ### Optional: turn on NVIDIA NIM-powered exception notes
 
