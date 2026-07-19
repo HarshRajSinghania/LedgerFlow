@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Activity, Server, AlertCircle } from 'lucide-react';
+import { Layers, Activity, Server, AlertCircle, UploadCloud, History, Sparkles, BookOpen, Code2 } from 'lucide-react';
 import UploadZone from './components/UploadZone';
 import StatsGrid from './components/StatsGrid';
 import ExecutiveSummary from './components/ExecutiveSummary';
 import ReconciliationChart from './components/ReconciliationChart';
 import ReconciliationTable from './components/ReconciliationTable';
 import HistorySidebar from './components/HistorySidebar';
+import AskAIPanel from './components/AskAIPanel';
+
+const REPO_URL = 'https://github.com/HarshRajSinghania/LedgerFlow';
 
 export default function App() {
   const [activeJob, setActiveJob] = useState(null);
   const [historyList, setHistoryList] = useState([]);
   const [apiOnline, setApiOnline] = useState(null);
+  const [askOpen, setAskOpen] = useState(false);
+  const historyRef = React.useRef(null);
 
   // Check backend health on mount
   useEffect(() => {
@@ -80,6 +85,22 @@ export default function App() {
     setActiveJob(null);
   };
 
+  const handleRowAction = (updatedRow) => {
+    if (!activeJob) return;
+    const newReport = activeJob.report.map((r) =>
+      r.Invoice_ID === updatedRow.Invoice_ID && r.Product_Code === updatedRow.Product_Code ? updatedRow : r
+    );
+    const updatedJob = { ...activeJob, report: newReport };
+    setActiveJob(updatedJob);
+    const updatedHistory = historyList.map((j) => (j.job_id === updatedJob.job_id ? updatedJob : j));
+    setHistoryList(updatedHistory);
+    localStorage.setItem('ledgerflow_jobs_v1', JSON.stringify(updatedHistory));
+  };
+
+  const scrollToHistory = () => {
+    historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between">
       {/* Top Navbar (Minimal Vintage Style) */}
@@ -97,11 +118,53 @@ export default function App() {
             </div>
           </div>
 
+          {/* Navigation links */}
+          <nav className="hidden md:flex items-center gap-1">
+            <button
+              onClick={() => setActiveJob(null)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all ${
+                !activeJob ? 'bg-[#f7f4eb] text-[#be5a38]' : 'text-[#73675c] hover:text-[#2c2520] hover:bg-[#f7f4eb]'
+              }`}
+            >
+              <UploadCloud className="w-3.5 h-3.5" /> New Run
+            </button>
+            <button
+              onClick={scrollToHistory}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider text-[#73675c] hover:text-[#2c2520] hover:bg-[#f7f4eb] transition-all"
+            >
+              <History className="w-3.5 h-3.5" /> History
+            </button>
+            <button
+              onClick={() => setAskOpen(true)}
+              disabled={!activeJob}
+              title={activeJob ? 'Ask AI about this reconciliation' : 'Run a reconciliation first'}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider text-[#73675c] hover:text-[#be5a38] hover:bg-[#f7f4eb] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Ask AI
+            </button>
+            <a
+              href={`${REPO_URL}#readme`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider text-[#73675c] hover:text-[#2c2520] hover:bg-[#f7f4eb] transition-all"
+            >
+              <BookOpen className="w-3.5 h-3.5" /> Docs
+            </a>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider text-[#73675c] hover:text-[#2c2520] hover:bg-[#f7f4eb] transition-all"
+            >
+              <Code2 className="w-3.5 h-3.5" /> GitHub
+            </a>
+          </nav>
+
           <div className="flex items-center gap-4">
             {/* API Health badge */}
             <div className="flex items-center gap-2 px-3 py-1 bg-[#f8f6f0] border border-[#dcd6cd] rounded text-[9px] font-mono font-bold text-[#73675c] uppercase">
               <Server className="w-3.5 h-3.5 text-[#73675c]" />
-              <span>Core Core:</span>
+              <span>Core:</span>
               {apiOnline === null ? (
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse inline-block" /> Checking</span>
               ) : apiOnline ? (
@@ -125,7 +188,7 @@ export default function App() {
               />
             </div>
             
-            <div className="lg:col-span-1 h-full lg:sticky lg:top-24">
+            <div ref={historyRef} className="lg:col-span-1 h-full lg:sticky lg:top-24">
               <HistorySidebar
                 historyList={historyList}
                 onSelectJob={handleSelectJob}
@@ -170,11 +233,12 @@ export default function App() {
                 report={activeJob.report}
                 jobId={activeJob.job_id}
                 onBackToUpload={handleBackToUpload}
+                onRowAction={handleRowAction}
               />
             </div>
 
             {/* Sticky Sidebar on the right */}
-            <div className="lg:col-span-1 h-full lg:sticky lg:top-24">
+            <div ref={historyRef} className="lg:col-span-1 h-full lg:sticky lg:top-24">
               <HistorySidebar
                 historyList={historyList}
                 onSelectJob={handleSelectJob}
@@ -185,6 +249,10 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {askOpen && activeJob && (
+        <AskAIPanel jobId={activeJob.job_id} onClose={() => setAskOpen(false)} />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-[#dcd6cd] bg-[#ffffff] py-5 text-center text-[9px] font-mono text-[#73675c] shadow-[0_-1px_3px_rgba(44,37,32,0.02)]">

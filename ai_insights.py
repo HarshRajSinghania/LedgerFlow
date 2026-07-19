@@ -44,24 +44,42 @@ def _get_client():
         return None
 
 
+_FLAG_LABELS = {
+    "NO_PO_HIGH_VALUE": "high-value with no order on file",
+    "ROUND_AMOUNT": "a suspiciously round amount",
+    "THRESHOLD_SHAVING": "just under a common approval threshold",
+    "PRICE_DEVIATION": "priced well outside this product's usual range",
+    "SUPPLIER_VELOCITY": "from a supplier generating an unusually high rate of exceptions",
+}
+
+
+def _flag_suffix(row) -> str:
+    flags = row.get("Risk_Flags") or []
+    labels = [_FLAG_LABELS[f] for f in flags if f in _FLAG_LABELS]
+    if not labels:
+        return ""
+    return " Also flagged as " + "; ".join(labels) + "."
+
+
 def _rule_based_note(row) -> tuple[str, str]:
     """Fallback narrator. Returns (note, confidence)."""
     status = row["Status"]
     exposure = row.get("Financial_Exposure") or 0
+    suffix = _flag_suffix(row)
 
     if status == "MISSING_IN_PO":
         return (
             f"Invoice {row['Invoice_ID']} bills for {row['Product_Name']} "
             f"(£{abs(exposure):,.2f}) but no matching Purchase Order exists. "
             f"Could be an unauthorized purchase, a mis-typed PO reference, or a duplicate "
-            f"invoice from the supplier. Hold for investigation before payment.",
+            f"invoice from the supplier. Hold for investigation before payment.{suffix}",
             "Likely" if abs(exposure) > 1000 else "Insufficient evidence",
         )
     if status == "MISSING_IN_INVOICE":
         return (
             f"PO {row['Invoice_ID']} ordered {row['Product_Name']} but no invoice has "
             f"arrived yet. Likely goods in transit or an unbilled delivery - not a loss, "
-            f"but track it so it doesn't get forgotten and paid twice later.",
+            f"but track it so it doesn't get forgotten and paid twice later.{suffix}",
             "Likely",
         )
     if status == "VALUE_MISMATCH":
@@ -69,14 +87,14 @@ def _rule_based_note(row) -> tuple[str, str]:
             f"{row['Invoice_ID']}/{row['Product_Code']}: PO and Invoice both exist but "
             f"disagree (PO total £{row['PO_Total']:,.2f} vs Invoice total "
             f"£{row['Invoice_Total']:,.2f}). Classic overbilling/underbilling case - "
-            f"verify quantity received and unit price against the supplier contract.",
+            f"verify quantity received and unit price against the supplier contract.{suffix}",
             "Confirmed",
         )
     if status.startswith("DUPLICATE_KEY"):
         return (
             f"{row['Invoice_ID']}/{row['Product_Code']} appears more than once in the "
             f"same file. Automated matching was skipped for this key to avoid guessing "
-            f"which rows pair together - needs manual review.",
+            f"which rows pair together - needs manual review.{suffix}",
             "Confirmed",
         )
     return ("", "")
@@ -202,3 +220,100 @@ def executive_summary(report: pd.DataFrame, stats: dict) -> str:
         f"ordered and need a manual pricing check. "
         f"Suppliers contributing the most exposure: {top_str}."
     )
+
+
+def _rule_based_answer(report: pd.DataFrame, stats: dict, question: str) -> str:
+    """Handles a handful of common question patterns without an LLM, so the
+    Ask-AI panel still works with zero API key configured."""
+    q = question.lower()
+    exceptions = report[report["Status"] != "MATCHED"]
+
+    def top_supplier():
+        if exceptions.empty:
+            return None
+        s = exceptions.groupby("Supplier")["Financial_Exposure"].apply(lambda x: x.abs().sum())
+        return s.sort_values(ascending=False).head(1)
+
+    if "supplier" in q and ("worst" in q or "worry" in q or "risk" in q or "most" in q):
+        s = top_supplier()
+        if s is None or s.empty:
+            return "No suppliers have outstanding exceptions - everything is matched."
+        name, val = s.index[0], s.iloc[0]
+        return f"{name} carries the most financial exposure among exceptions, at £{val:,.2f}."
+
+    if "how many" in q and "missing" in q and "po" in q:
+        return f"{stats['missing_in_po']} invoice line(s) have no matching Purchase Order."
+
+    if "how many" in q and "missing" in q and "invoice" in q:
+        return f"{stats['missing_in_invoice']} PO line(s) have not yet been billed."
+
+    if "exposure" in q or "total" in q and "£" not in q:
+        return f"Total financial exposure across unresolved lines is £{stats['total_exposure']:,.2f}."
+
+    if "mismatch" in q:
+        return f"{stats['value_mismatch']} line(s) were billed at a different quantity or price than ordered."
+
+    if "risk" in q and ("highest" in q or "top" in q):
+        if "Risk_Score" in report.columns and not exceptions.empty:
+            top = exceptions.sort_values("Risk_Score", ascending=False).head(1).iloc[0]
+            return (
+                f"The highest-risk line is {top['Invoice_ID']}/{top['Product_Code']} "
+                f"({top['Product_Name']}, £{(top['Financial_Exposure'] or 0):,.2f} exposure, "
+                f"risk score {top['Risk_Score']}/100)."
+            )
+
+    return (
+        "I can answer specific questions about this reconciliation run (e.g. "
+        "'which supplier is riskiest', 'how many lines are missing a PO', "
+        "'what's the total exposure') more precisely once an AI key is configured. "
+        f"For reference: {stats['total_lines']} lines reconciled, "
+        f"£{stats['total_exposure']:,.2f} total exposure, {len(exceptions)} exceptions open."
+    )
+
+
+def answer_question(report: pd.DataFrame, stats: dict, question: str) -> dict:
+    """Ask-AI endpoint backing function. Returns {"answer": str, "confidence": str}."""
+    client = _get_client()
+
+    if client is not None:
+        exceptions = report[report["Status"] != "MATCHED"]
+        top_suppliers = (
+            exceptions.groupby("Supplier")["Financial_Exposure"]
+            .apply(lambda s: s.abs().sum())
+            .sort_values(ascending=False)
+            .head(5)
+        )
+        context = (
+            f"Reconciliation stats: {stats}\n"
+            f"Top suppliers by exposure: {top_suppliers.to_dict()}\n"
+            f"Exception count: {len(exceptions)}\n"
+            "Sample of highest-risk exception rows (Invoice_ID, Product, Status, "
+            "Financial_Exposure, Risk_Score, Risk_Flags):\n"
+            + "\n".join(
+                f"- {r['Invoice_ID']} {r['Product_Name']} {r['Status']} "
+                f"£{(r['Financial_Exposure'] or 0):,.2f} "
+                f"risk={r.get('Risk_Score', 'n/a')} flags={r.get('Risk_Flags', [])}"
+                for _, r in exceptions.sort_values(
+                    "Risk_Score" if "Risk_Score" in exceptions.columns else "Financial_Exposure",
+                    ascending=False,
+                ).head(15).iterrows()
+            )
+        )
+        prompt = (
+            "You are a finance audit assistant answering a question about an invoice "
+            "reconciliation run. Use only the data given below - never invent numbers. "
+            "Answer in 1-3 sentences, plain English, be specific with figures.\n\n"
+            f"DATA:\n{context}\n\nQUESTION: {question}"
+        )
+        try:
+            resp = client.chat.completions.create(
+                model=MODEL, max_tokens=300,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            content = resp.choices[0].message.content
+            if content:
+                return {"answer": content.strip(), "confidence": "AI-generated"}
+        except Exception:
+            pass
+
+    return {"answer": _rule_based_answer(report, stats, question), "confidence": "Rule-based"}

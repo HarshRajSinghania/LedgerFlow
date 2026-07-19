@@ -36,8 +36,25 @@ REPORT_COLUMNS = [
     "Invoice_ID", "Product_Code", "Status", "Supplier", "Product_Name",
     "PO_Date", "Invoice_Date", "PO_Quantity", "Invoice_Quantity",
     "PO_Unit_Price", "Invoice_Unit_Price", "PO_Total", "Invoice_Total",
-    "Financial_Exposure", "AI_Confidence", "AI_Note",
+    "Financial_Exposure", "Risk_Score", "Risk_Flags", "AI_Confidence", "AI_Note",
+    "Action", "Action_Note",
 ]
+
+
+def _prepare_for_excel(report: pd.DataFrame) -> pd.DataFrame:
+    """Fills in any optional columns that may not exist yet (Risk_*, Action*
+    are added by later pipeline stages) and makes list-typed cells
+    (Risk_Flags) writable as plain text."""
+    df = report.copy()
+    for col in REPORT_COLUMNS:
+        if col not in df.columns:
+            df[col] = "" if col != "Risk_Score" else 0
+    df["Risk_Flags"] = df["Risk_Flags"].apply(
+        lambda v: ", ".join(v) if isinstance(v, list) else (v or "")
+    )
+    df["Action"] = df["Action"].fillna("")
+    df["Action_Note"] = df["Action_Note"].fillna("")
+    return df
 
 
 def _style_header(ws, ncols, row=1):
@@ -134,13 +151,14 @@ def write_report(path, report: pd.DataFrame, stats: dict, summary_text: str, war
     ws.column_dimensions["B"].width = 22
 
     # --- Full reconciliation report ---
+    prepared = _prepare_for_excel(report)
     ws2 = wb.create_sheet("Reconciliation Report")
-    full = report[REPORT_COLUMNS].copy()
+    full = prepared[REPORT_COLUMNS].copy()
     _write_table(ws2, full)
 
     # --- Exceptions only, sorted by financial risk (already sorted upstream) ---
     ws3 = wb.create_sheet("Exceptions")
-    exceptions = report[report["Status"] != "MATCHED"][REPORT_COLUMNS].copy()
+    exceptions = prepared[prepared["Status"] != "MATCHED"][REPORT_COLUMNS].copy()
     _write_table(ws3, exceptions)
 
     wb.save(path)

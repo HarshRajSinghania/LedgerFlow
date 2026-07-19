@@ -1,12 +1,53 @@
 import React, { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, Download, ArrowUpDown, Brain, Info, X, AlertTriangle, CheckCircle, HelpCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, Download, ArrowUpDown, Brain, Info, X, AlertTriangle, CheckCircle, HelpCircle, ShieldCheck, PauseCircle, Flag, RotateCcw, Gauge } from 'lucide-react';
 
-export default function ReconciliationTable({ report, jobId, onBackToUpload }) {
+const ACTION_CONFIG = {
+  APPROVE: { label: 'Approved', icon: ShieldCheck, color: 'text-[#3c5946] bg-[#f2f6f3] border-[#3c5946]/30' },
+  HOLD: { label: 'On Hold', icon: PauseCircle, color: 'text-[#c2923f] bg-[#faf8f3] border-[#c2923f]/30' },
+  ESCALATE: { label: 'Escalated', icon: Flag, color: 'text-[#be5a38] bg-[#faf3f1] border-[#be5a38]/30' },
+  CLEAR: { label: 'Cleared', icon: RotateCcw, color: 'text-[#73675c] bg-[#f8f7f5] border-[#73675c]/30' },
+};
+
+function riskColor(score) {
+  if (score >= 50) return 'text-[#be5a38] border-[#be5a38]/35 bg-[#faf3f1]';
+  if (score >= 25) return 'text-[#c2923f] border-[#c2923f]/35 bg-[#faf8f3]';
+  if (score > 0) return 'text-[#4f748a] border-[#4f748a]/30 bg-[#f3f6f8]';
+  return 'text-[#73675c] border-[#dcd6cd] bg-[#f8f7f5]';
+}
+
+export default function ReconciliationTable({ report, jobId, onBackToUpload, onRowAction }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedRow, setSelectedRow] = useState(null);
   const [sortField, setSortField] = useState('Financial_Exposure');
   const [sortAsc, setSortAsc] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
+  const [actionError, setActionError] = useState('');
+
+  const takeAction = async (action) => {
+    if (!selectedRow || actionPending) return;
+    setActionPending(true);
+    setActionError('');
+    try {
+      const res = await fetch(`/api/reconcile/${jobId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_id: selectedRow.Invoice_ID,
+          product_code: selectedRow.Product_Code,
+          action,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      setSelectedRow(data.updated_row);
+      onRowAction && onRowAction(data.updated_row);
+    } catch (err) {
+      setActionError(err.message || 'Could not record that action.');
+    } finally {
+      setActionPending(false);
+    }
+  };
 
   // Flat, stamp-like vintage badges
   const statusConfig = {
@@ -232,6 +273,11 @@ export default function ReconciliationTable({ report, jobId, onBackToUpload }) {
                       Product <ArrowUpDown className="w-3 h-3 text-[#73675c]" />
                     </div>
                   </th>
+                  <th className="p-3.5 text-center cursor-pointer hover:bg-[#eae3d2] transition-colors" onClick={() => handleSort('Risk_Score')}>
+                    <div className="flex items-center gap-1 justify-center">
+                      Risk <ArrowUpDown className="w-3 h-3 text-[#73675c]" />
+                    </div>
+                  </th>
                   <th className="p-3.5 text-right cursor-pointer hover:bg-[#eae3d2] transition-colors" onClick={() => handleSort('Financial_Exposure')}>
                     <div className="flex items-center gap-1 justify-end">
                       Exposure <ArrowUpDown className="w-3 h-3 text-[#73675c]" />
@@ -271,8 +317,26 @@ export default function ReconciliationTable({ report, jobId, onBackToUpload }) {
                         <td className="p-3.5 max-w-[200px]">
                           <span className="font-serif font-bold text-[#2c2520] block truncate">{row.Product_Name || 'n/a'}</span>
                           <span className="text-[9px] text-[#73675c] block truncate mt-0.5">{row.Supplier || 'n/a'}</span>
+                          {row.Action && ACTION_CONFIG[row.Action] && (
+                            <span className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold border uppercase ${ACTION_CONFIG[row.Action].color}`}>
+                              {React.createElement(ACTION_CONFIG[row.Action].icon, { className: 'w-2.5 h-2.5' })}
+                              {ACTION_CONFIG[row.Action].label}
+                            </span>
+                          )}
                         </td>
-                        
+
+                        {/* Risk Score */}
+                        <td className="p-3.5 text-center">
+                          {row.Status !== 'MATCHED' ? (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold border ${riskColor(row.Risk_Score)}`}>
+                              <Gauge className="w-2.5 h-2.5" />
+                              {row.Risk_Score}
+                            </span>
+                          ) : (
+                            <span className="text-[#dcd6cd] text-[9px] font-mono">—</span>
+                          )}
+                        </td>
+
                         {/* Financial Exposure */}
                         <td className="p-3.5 text-right font-mono font-bold">
                           {row.Financial_Exposure > 0 ? (
@@ -298,7 +362,7 @@ export default function ReconciliationTable({ report, jobId, onBackToUpload }) {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-[#73675c] font-mono text-xs">
+                    <td colSpan="6" className="p-8 text-center text-[#73675c] font-mono text-xs">
                       No records matched the filter criteria.
                     </td>
                   </tr>
@@ -397,6 +461,71 @@ export default function ReconciliationTable({ report, jobId, onBackToUpload }) {
                   </span>
                 </div>
               </div>
+
+              {/* Risk Flags */}
+              {selectedRow.Status !== 'MATCHED' && (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[10px] font-mono font-bold uppercase text-[#73675c]">Risk Assessment</h4>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold border ${riskColor(selectedRow.Risk_Score)}`}>
+                      <Gauge className="w-2.5 h-2.5" /> {selectedRow.Risk_Score} / 100
+                    </span>
+                  </div>
+                  {selectedRow.Risk_Flags && selectedRow.Risk_Flags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedRow.Risk_Flags.map((flag) => (
+                        <span key={flag} className="text-[8px] font-mono font-bold px-1.5 py-0.5 bg-[#f7f4eb] border border-[#dcd6cd] text-[#73675c] rounded uppercase">
+                          {flag.replaceAll('_', ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[9px] text-[#73675c] font-mono">No structural risk indicators beyond the status itself.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Action Workflow */}
+              {selectedRow.Status !== 'MATCHED' && (
+                <div className="mb-5">
+                  <h4 className="text-[10px] font-mono font-bold uppercase text-[#73675c] border-b border-[#dcd6cd] pb-1 mb-2.5">Take Action</h4>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      onClick={() => takeAction('APPROVE')}
+                      disabled={actionPending}
+                      className="flex flex-col items-center gap-1 py-2 border border-[#3c5946]/30 bg-[#f2f6f3] text-[#3c5946] hover:bg-[#3c5946] hover:text-white rounded text-[9px] font-mono font-bold uppercase transition-all disabled:opacity-50"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" /> Approve
+                    </button>
+                    <button
+                      onClick={() => takeAction('HOLD')}
+                      disabled={actionPending}
+                      className="flex flex-col items-center gap-1 py-2 border border-[#c2923f]/30 bg-[#faf8f3] text-[#c2923f] hover:bg-[#c2923f] hover:text-white rounded text-[9px] font-mono font-bold uppercase transition-all disabled:opacity-50"
+                    >
+                      <PauseCircle className="w-3.5 h-3.5" /> Hold
+                    </button>
+                    <button
+                      onClick={() => takeAction('ESCALATE')}
+                      disabled={actionPending}
+                      className="flex flex-col items-center gap-1 py-2 border border-[#be5a38]/30 bg-[#faf3f1] text-[#be5a38] hover:bg-[#be5a38] hover:text-white rounded text-[9px] font-mono font-bold uppercase transition-all disabled:opacity-50"
+                    >
+                      <Flag className="w-3.5 h-3.5" /> Escalate
+                    </button>
+                  </div>
+                  {selectedRow.Action && (
+                    <button
+                      onClick={() => takeAction('CLEAR')}
+                      disabled={actionPending}
+                      className="w-full mt-1.5 flex items-center justify-center gap-1 py-1.5 border border-[#dcd6cd] text-[#73675c] hover:text-[#2c2520] rounded text-[9px] font-mono font-bold uppercase transition-all disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Clear decision
+                    </button>
+                  )}
+                  {actionError && (
+                    <p className="text-[9px] text-[#be5a38] font-mono mt-2">{actionError}</p>
+                  )}
+                </div>
+              )}
 
               {/* AI Exception Note */}
               {selectedRow.AI_Note ? (
